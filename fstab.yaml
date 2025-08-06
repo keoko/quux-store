@@ -1,0 +1,7 @@
+mountpoints:
+  /:
+    url: https://content.da.live/keoko/quux-store/
+    type: markup
+
+folders:
+  /products/: /products/default
