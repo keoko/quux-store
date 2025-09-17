@@ -50,6 +50,20 @@ class PlaceholderManager extends LitElement {
     return `https://admin.hlx.page/${mode}/${org}/${site}/main/${folders}/placeholders.json`;
   }
 
+  buildPlaceholdersUrl(mode = 'preview') {
+    // Extract org and site from basePath (e.g., /org/site/folder/subfolder/subsubfolder)
+    const pathParts = this.basePath.split('/').filter(part => part);
+    const org = pathParts[0];
+    const site = pathParts[1];
+    const folders = pathParts.slice(2).join('/');
+
+    if (mode === 'preview') {
+      return `https://main--${site}--${org}.aem.page/${folders}/placeholders.json`;
+    } else {
+      return `https://main--${site}--${org}.aem.live/${folders}/placeholders.json`;
+    }
+  }
+
   async connectedCallback() {
     super.connectedCallback();
     this.shadowRoot.adoptedStyleSheets = [style];
@@ -186,8 +200,7 @@ class PlaceholderManager extends LitElement {
         this.statusType = 'success';
 
         // Open the preview URL
-        const pathParts = this.basePath.split('/').filter(part => part);
-        const previewUrl = `https://main--${pathParts[1]}--${pathParts[0]}.aem.page/placeholders.json`;
+        const previewUrl = this.buildPlaceholdersUrl('preview');
         window.open(previewUrl, '_blank');
       } else {
         this.statusMessage = `Failed to publish to preview: ${response.status} ${response.statusText}`;
@@ -219,7 +232,7 @@ class PlaceholderManager extends LitElement {
         this.statusType = 'success';
 
         // Open the live URL
-        const liveUrl = `https://main--${pathParts[1]}--${pathParts[0]}.aem.live/placeholders.json`;
+        const liveUrl = this.buildPlaceholdersUrl('live');
         window.open(liveUrl, '_blank');
       } else {
         this.statusMessage = `Failed to publish to live: ${response.status} ${response.statusText}`;
