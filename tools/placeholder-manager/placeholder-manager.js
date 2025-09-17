@@ -32,6 +32,12 @@ class PlaceholderManager extends LitElement {
     // Initialize basePath from window query parameter, default to /hannessolo/da-playground
     const urlParams = new URLSearchParams(window.location.search);
     this.basePath = urlParams.get('basePath') || '/hannessolo/da-playground';
+
+    // Extract org, site, and folders from basePath for reuse in URL building
+    const pathParts = this.basePath.split('/').filter(part => part);
+    this.org = pathParts[0];
+    this.site = pathParts[1];
+    this.folders = pathParts.slice(2).join('/');
   }
 
   addCacheBust(url) {
@@ -40,27 +46,14 @@ class PlaceholderManager extends LitElement {
   }
 
   buildPlaceholdersAdminUrl(mode = 'preview') {
-    // Extract org, site, and folders from basePath (e.g., /org/site/folder/subfolder/subsubfolder)
-    const pathParts = this.basePath.split('/').filter(part => part);
-    const org = pathParts[0];
-    const site = pathParts[1];
-    const folders = pathParts.slice(2).join('/');
-
-
-    return `https://admin.hlx.page/${mode}/${org}/${site}/main/${folders}/placeholders.json`;
+    return `https://admin.hlx.page/${mode}/${this.org}/${this.site}/main/${this.folders}/placeholders.json`;
   }
 
   buildPlaceholdersUrl(mode = 'preview') {
-    // Extract org and site from basePath (e.g., /org/site/folder/subfolder/subsubfolder)
-    const pathParts = this.basePath.split('/').filter(part => part);
-    const org = pathParts[0];
-    const site = pathParts[1];
-    const folders = pathParts.slice(2).join('/');
-
     if (mode === 'preview') {
-      return `https://main--${site}--${org}.aem.page/${folders}/placeholders.json`;
+      return `https://main--${this.site}--${this.org}.aem.page/${this.folders}/placeholders.json`;
     } else {
-      return `https://main--${site}--${org}.aem.live/${folders}/placeholders.json`;
+      return `https://main--${this.site}--${this.org}.aem.live/${this.folders}/placeholders.json`;
     }
   }
 
