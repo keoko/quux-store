@@ -21,7 +21,6 @@ class PlaceholderManager extends LitElement {
   };
 
   constructor(props) {
-    console.log('PlaceholderManager constructor', props);
     super(props);
     this.loading = true;
     this.error = null;
@@ -663,5 +662,4 @@ class PlaceholderManager extends LitElement {
   }
 }
 
-console.log('PlaceholderManager defined');
 customElements.define('placeholder-manager', PlaceholderManager);
