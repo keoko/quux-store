@@ -39,7 +39,7 @@ class PlaceholderManager extends LitElement {
     return `${url}${separator}cacheBust=${Math.random().toString(36).substring(7)}`;
   }
 
-  buildPlaceholdersJsonUrl(mode = 'preview') {
+  buildPlaceholdersAdminUrl(mode = 'preview') {
     // Extract org, site, and folders from basePath (e.g., /org/site/folder/subfolder/subsubfolder)
     const pathParts = this.basePath.split('/').filter(part => part);
     const org = pathParts[0];
@@ -172,7 +172,7 @@ class PlaceholderManager extends LitElement {
       this.statusMessage = 'Publishing to preview...';
       this.statusType = 'info';
 
-      const url = this.buildPlaceholdersJsonUrl('preview');
+      const url = this.buildPlaceholdersAdminUrl('preview');
 
       const response = await fetch(url, {
         method: 'POST',
@@ -205,7 +205,7 @@ class PlaceholderManager extends LitElement {
       this.statusMessage = 'Publishing to live...';
       this.statusType = 'info';
 
-      const url = this.buildPlaceholdersJsonUrl('live');
+      const url = this.buildPlaceholdersAdminUrl('live');
 
       const response = await fetch(url, {
         method: 'POST',
