@@ -46,14 +46,16 @@ class PlaceholderManager extends LitElement {
   }
 
   buildPlaceholdersAdminUrl(mode = 'preview') {
-    return `https://admin.hlx.page/${mode}/${this.org}/${this.site}/main/${this.folders}/placeholders.json`;
+    const foldersPath = this.folders ? `/${this.folders}` : '';
+    return `https://admin.hlx.page/${mode}/${this.org}/${this.site}/main${foldersPath}/placeholders.json`;
   }
 
   buildPlaceholdersUrl(mode = 'preview') {
+    const foldersPath = this.folders ? `/${this.folders}` : '';
     if (mode === 'preview') {
-      return `https://main--${this.site}--${this.org}.aem.page/${this.folders}/placeholders.json`;
+      return `https://main--${this.site}--${this.org}.aem.page${foldersPath}/placeholders.json`;
     } else {
-      return `https://main--${this.site}--${this.org}.aem.live/${this.folders}/placeholders.json`;
+      return `https://main--${this.site}--${this.org}.aem.live${foldersPath}/placeholders.json`;
     }
   }
 
