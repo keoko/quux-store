@@ -350,6 +350,65 @@ class PM2 extends LitElement {
     }
   }
 
+  mergePlaceholderData(baseData, regionData) {
+    // Create a deep copy of the base data
+    const merged = JSON.parse(JSON.stringify(baseData));
+
+    // Create a map of existing keys in base data for quick lookup
+    const baseKeyMap = new Map();
+    if (merged.data && Array.isArray(merged.data)) {
+      merged.data.forEach(item => {
+        if (item.key) {
+          baseKeyMap.set(item.key, item);
+        }
+      });
+    }
+
+    // Merge region data
+    if (regionData.data && Array.isArray(regionData.data)) {
+      regionData.data.forEach(regionItem => {
+        if (regionItem.key) {
+          if (baseKeyMap.has(regionItem.key)) {
+            // Update existing key with region value
+            const existingItem = baseKeyMap.get(regionItem.key);
+            console.log(`  Overriding key "${regionItem.key}": "${existingItem.text}" -> "${regionItem.text}"`);
+            existingItem.text = regionItem.text; // Override the text value
+          } else {
+            // Add new key from region
+            merged.data.push(regionItem);
+            baseKeyMap.set(regionItem.key, regionItem);
+            console.log(`  Adding new key "${regionItem.key}": "${regionItem.text}"`);
+          }
+        }
+      });
+    }
+
+    // Update metadata
+    if (regionData[':colWidths']) {
+      merged[':colWidths'] = regionData[':colWidths'];
+    }
+    if (regionData[':sheetname']) {
+      merged[':sheetname'] = regionData[':sheetname'];
+    }
+    if (regionData[':type']) {
+      merged[':type'] = regionData[':type'];
+    }
+
+    // Sort data alphabetically by key
+    if (merged.data && Array.isArray(merged.data)) {
+      merged.data.sort((a, b) => {
+        const keyA = a.key || '';
+        const keyB = b.key || '';
+        return keyA.localeCompare(keyB);
+      });
+    }
+
+    // Update total count
+    merged.total = merged.data ? merged.data.length : 0;
+
+    return merged;
+  }
+
   render() {
     if (this.loading) {
       return html`
