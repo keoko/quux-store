@@ -90,8 +90,8 @@ class PM2 extends LitElement {
         throw new Error(`Failed to fetch placeholder types: ${placeholdersRawResponse.status} ${placeholdersRawResponse.statusText}`);
       }
 
-      const typesData = await placeholdersRawResponse.json();
-      console.log('Placeholders raw data:', typesData);
+      this.placeholderData = await placeholdersRawResponse.json();
+      console.log('Placeholders raw data:', this.placeholderData);
 
       this.loading = false;
     } catch (err) {
