@@ -78,26 +78,20 @@ class PM2 extends LitElement {
       this.loading = true;
       this.error = null;
 
-      // First, get the list of types (directories) in .placeholders
-      const typesUrl = this.addCacheBust(`https://admin.da.live/list${this.basePath}/.placeholders/`);
-      const typesResponse = await fetch(typesUrl, {
+      // First, get the list of types (directories) in placeholders-raw
+      const placeholdersRawUrl = this.addCacheBust(`https://admin.da.live/list${this.basePath}/placeholders-raw`);
+      const placeholdersRawResponse = await fetch(placeholdersRawUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!typesResponse.ok) {
-        throw new Error(`Failed to fetch placeholder types: ${typesResponse.status} ${typesResponse.statusText}`);
+      if (!placeholdersRawResponse.ok) {
+        throw new Error(`Failed to fetch placeholder types: ${placeholdersRawResponse.status} ${placeholdersRawResponse.statusText}`);
       }
 
-      const typesData = await typesResponse.json();
-      console.log('Types data:', typesData);
-
-      // Parse types and then fetch regions for each type
-      this.placeholderData = await this.parseAndFetchPlaceholderData(typesData);
-
-      // Convert placeholder data to multisheet format
-      this.convertToMultisheetData();
+      const typesData = await placeholdersRawResponse.json();
+      console.log('Placeholders raw data:', typesData);
 
       this.loading = false;
     } catch (err) {
@@ -105,70 +99,6 @@ class PM2 extends LitElement {
       this.error = err.message;
       this.loading = false;
     }
-  }
-
-  async parseAndFetchPlaceholderData(typesData) {
-    const organized = {};
-
-    // Process each item in the types data to find type directories
-    const typePromises = typesData.map(async (item) => {
-      if (item.path) {
-        // Expected path structure: /<org>/<site>/.placeholders/<type>
-        const pathParts = item.path.split('/');
-
-        if (pathParts.length >= 4 && pathParts[pathParts.length - 2] === '.placeholders') {
-          const type = pathParts[pathParts.length - 1];
-
-          // Skip if it's not a directory or if it's the .placeholders directory itself
-          if (type && type !== '.placeholders') {
-            try {
-              // Fetch regions (files) for this type
-              const regionsUrl = this.addCacheBust(`https://admin.da.live/list${this.basePath}/.placeholders/${type}/`);
-              const regionsResponse = await fetch(regionsUrl, {
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
-              });
-
-              if (regionsResponse.ok) {
-                const regionsData = await regionsResponse.json();
-                console.log(`Regions for type ${type}:`, regionsData);
-
-                // Extract region names from the response
-                const regions = regionsData
-                  .filter(regionItem => regionItem.path)
-                  .map(regionItem => {
-                    const regionPathParts = regionItem.path.split('/');
-                    return regionPathParts[regionPathParts.length - 1]; // Get the last part (region name)
-                  })
-                  .filter(region => region && region !== type); // Filter out empty or duplicate names
-
-                return { type, regions };
-              } else {
-                console.warn(`Failed to fetch regions for type ${type}: ${regionsResponse.status}`);
-                return { type, regions: [] };
-              }
-            } catch (err) {
-              console.error(`Error fetching regions for type ${type}:`, err);
-              return { type, regions: [] };
-            }
-          }
-        }
-      }
-      return null;
-    });
-
-    // Wait for all type/region fetches to complete
-    const typeResults = await Promise.all(typePromises);
-
-    // Organize the results
-    typeResults.forEach(result => {
-      if (result && result.type) {
-        organized[result.type] = result.regions.sort();
-      }
-    });
-
-    return organized;
   }
 
   generateEditorLink(type, region) {
@@ -588,6 +518,7 @@ class PM2 extends LitElement {
   }
 
   convertToMultisheetData() {
+    console.log('Converting placeholder data to multisheet data', this.placeholderData);
     if (!this.placeholderData || Object.keys(this.placeholderData).length === 0) {
       this.multisheetData = null;
       return;
