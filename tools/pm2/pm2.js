@@ -217,34 +217,48 @@ class PM2 extends LitElement {
         // const allPath = `${this.basePath}/.placeholders/${type}/all.json`;
         // const allSourceUrl = this.addCacheBust(`https://admin.da.live/source${allPath}`);
 
-        // let baseData = null;
-        // try {
-        //   const allResponse = await fetch(allSourceUrl, {
-        //     headers: {
-        //       'Authorization': `Bearer ${token}`
-        //     }
-        //   });
+        // fetch from this.placeholderData ${type}-all.json
+        const allData = this.placeholderData[`${type}-all`];
 
-        //   if (allResponse.ok) {
-        //     const allData = await allResponse.json();
-        //     baseData = this.normalizeDataKeys(allData);
-        //     console.log(`Base data from ${type}/all.json:`, allData);
-        //   } else {
-        //     console.warn(`No all.json found for type ${type}: ${allResponse.status}`);
-        //     baseData = { data: [] }; // Start with empty data if no all.json
-        //   }
-        // } catch (err) {
-        //   console.error(`Error fetching all.json for type ${type}:`, err);
-        //   baseData = { data: [] }; // Start with empty data on error
-        // }
+        // get regions from this.placeholderData with keys like ${type}-region,
+        // extract the region name and filter out the all region and type-all region
+        const regions = Object.keys(this.placeholderData).filter(key => key.startsWith(`${type}-`)).map(key => key.replace(`${type}-`, '')).filter(region => region !== 'all' && region !== `${type}-all`);
 
-        // // Now process each region for this type
-        // const regions = this.placeholderData[type];
+        console.log(`Regions for type ${type}:`, regions);
 
-        // for (const region of regions) {
-        //   if (region === 'all.json') continue; // Skip all.json as we already processed it
+        for (const region of regions) {
+          if (region === `all`) continue; // Skip all.json as we already processed it
 
-        //   console.log(`\n--- Processing region: ${type}/${region} ---`);
+          console.log(`\n--- Processing region: ${region}  ---`);
+
+          const regionData = this.placeholderData[`${type}-${region}`];
+          console.log(`Region data for ${type}-${region}:`, regionData);
+
+          // Normalize regionData to use lowercase keys
+          // this.normalizeDataKeys(regionData);
+
+          // merge the region data with the all data
+          const mergedData = this.mergePlaceholderData(allData, regionData);
+          console.log(`Merged data for ${type}-${region}:`, mergedData);
+
+          // Create sheet name
+          const sheetName = region === 'global' ? type : (
+            type === 'default' ? region :`${type}-${region}`
+          );
+
+          // Add to multi-sheet result
+          multiSheetResult[sheetName] = {
+            total: mergedData.total || mergedData.data?.length || 0,
+            offset: 0,
+            limit: mergedData.total || mergedData.data?.length || 0,
+            data: mergedData.data || []
+          };
+
+          // Add sheet name to names array
+          multiSheetResult[':names'].push(sheetName);
+        }
+
+
 
         //   const regionPath = `${this.basePath}/.placeholders/${type}/${region}`;
         //   const regionSourceUrl = this.addCacheBust(`https://admin.da.live/source${regionPath}`);
@@ -320,14 +334,14 @@ class PM2 extends LitElement {
       console.log('\n=== BEFORE POST-PROCESSING ===');
       console.log('Multi-sheet placeholder data:', JSON.stringify(multiSheetResult, null, 2));
 
-      // Apply post-processing to merge sheets according to the specified rules
-      const postProcessedResult = this.postProcessMultiSheet(multiSheetResult);
+      // // Apply post-processing to merge sheets according to the specified rules
+      // const postProcessedResult = this.postProcessMultiSheet(multiSheetResult);
 
-      console.log('\n=== AFTER POST-PROCESSING ===');
-      console.log('Post-processed multi-sheet data:', JSON.stringify(postProcessedResult, null, 2));
+      // console.log('\n=== AFTER POST-PROCESSING ===');
+      // console.log('Post-processed multi-sheet data:', JSON.stringify(postProcessedResult, null, 2));
 
-      // POST the data to the endpoint
-      await this.postPlaceholderData(postProcessedResult);
+      // // POST the data to the endpoint
+      // await this.postPlaceholderData(postProcessedResult);
 
     } catch (err) {
       console.error('Error in copy:', err);
