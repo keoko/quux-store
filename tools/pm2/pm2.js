@@ -79,7 +79,7 @@ class PM2 extends LitElement {
       this.error = null;
 
       // First, get the list of types (directories) in placeholders-raw
-      const placeholdersRawUrl = this.addCacheBust(`https://admin.da.live/list${this.basePath}/placeholders-raw`);
+      const placeholdersRawUrl = this.addCacheBust(`https://admin.da.live/source${this.basePath}/placeholders-raw`);
       const placeholdersRawResponse = await fetch(placeholdersRawUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
