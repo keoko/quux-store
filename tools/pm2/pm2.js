@@ -602,7 +602,7 @@ class PM2 extends LitElement {
         <p class="org-site-info">Organization/Site: <strong>${this.basePath}</strong></p>
         <p>Manage placeholder files organized by type and region:</p>
 
-        <multisheet-sheet .data-source=${`https://admin.da.live/source${this.basePath}/placeholders-raw.json`}></multisheet-sheet>
+        <multisheet-sheet data-source=${`https://admin.da.live/source${this.basePath}/placeholders-raw.json`}></multisheet-sheet>
 
         <div class="button-group">
           <button
