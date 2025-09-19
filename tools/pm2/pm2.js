@@ -208,7 +208,7 @@ class PM2 extends LitElement {
         ':type': 'multi-sheet'
       };
 
-      const types = getTypes();
+      const types = this.getTypes();
       // Process each type
       for (const type of types) {
         console.log(`\n=== Processing type: ${type} ===`);
