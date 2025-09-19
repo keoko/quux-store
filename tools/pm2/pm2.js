@@ -722,4 +722,4 @@ class PM2 extends LitElement {
   }
 }
 
-customElements.define('pm', PM2);
+customElements.define('pam-pam', PM2);
