@@ -214,7 +214,7 @@ class PM2 extends LitElement {
         console.log(`\n=== Processing type: ${type} ===`);
 
         // fetch from this.placeholderData ${type}-all.json
-        const allData = this.placeholderData[`${type}-all`] || [];
+        const allData = this.placeholderData[`${type}-all`] || { data: [] };
         // get regions from this.placeholderData with keys like ${type}-region,
         // extract the region name and filter out the all region and type-all region
         const regions = Object.keys(this.placeholderData).filter(key => key.startsWith(`${type}-`)).map(key => key.replace(`${type}-`, '')).filter(region => region !== 'all' && region !== `${type}-all`);
@@ -233,6 +233,7 @@ class PM2 extends LitElement {
           this.normalizeDataKeys(regionData);
 
           // merge the region data with the all data
+          console.log('Merging region data with all data', allData, regionData);
           const mergedData = this.mergePlaceholderData(allData, regionData);
           console.log(`Merged data for ${type}-${region}:`, mergedData);
 
