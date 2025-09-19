@@ -175,6 +175,167 @@ class PM2 extends LitElement {
     }
   }
 
+  getTypes() {
+    if (!this.placeholderData || !this.placeholderData[':names']) {
+      return [];
+    }
+
+    const types = new Set();
+
+    for (const name of this.placeholderData[':names']) {
+      // Extract type from format "type-region" or "type-all"
+      const parts = name.split('-');
+      if (parts.length >= 2) {
+        // Join all parts except the last one to handle types with hyphens
+        const type = parts.slice(0, -1).join('-');
+        types.add(type);
+      }
+    }
+
+    return Array.from(types);
+  }
+
+
+  async handleCopy() {
+    console.log('Copy button clicked');
+    this.statusMessage = 'Processing placeholder data...';
+    this.statusType = 'info';
+
+    try {
+      const multiSheetResult = {
+        ':version': 3,
+        ':names': [],
+        ':type': 'multi-sheet'
+      };
+
+      const types = getTypes();
+      // Process each type
+      for (const type of types) {
+        console.log(`\n=== Processing type: ${type} ===`);
+
+        // // First, fetch the all.json file for this type
+        // const allPath = `${this.basePath}/.placeholders/${type}/all.json`;
+        // const allSourceUrl = this.addCacheBust(`https://admin.da.live/source${allPath}`);
+
+        // let baseData = null;
+        // try {
+        //   const allResponse = await fetch(allSourceUrl, {
+        //     headers: {
+        //       'Authorization': `Bearer ${token}`
+        //     }
+        //   });
+
+        //   if (allResponse.ok) {
+        //     const allData = await allResponse.json();
+        //     baseData = this.normalizeDataKeys(allData);
+        //     console.log(`Base data from ${type}/all.json:`, allData);
+        //   } else {
+        //     console.warn(`No all.json found for type ${type}: ${allResponse.status}`);
+        //     baseData = { data: [] }; // Start with empty data if no all.json
+        //   }
+        // } catch (err) {
+        //   console.error(`Error fetching all.json for type ${type}:`, err);
+        //   baseData = { data: [] }; // Start with empty data on error
+        // }
+
+        // // Now process each region for this type
+        // const regions = this.placeholderData[type];
+
+        // for (const region of regions) {
+        //   if (region === 'all.json') continue; // Skip all.json as we already processed it
+
+        //   console.log(`\n--- Processing region: ${type}/${region} ---`);
+
+        //   const regionPath = `${this.basePath}/.placeholders/${type}/${region}`;
+        //   const regionSourceUrl = this.addCacheBust(`https://admin.da.live/source${regionPath}`);
+
+        //   try {
+        //     const regionResponse = await fetch(regionSourceUrl, {
+        //       headers: {
+        //         'Authorization': `Bearer ${token}`
+        //       }
+        //     });
+
+        //     if (regionResponse.ok) {
+        //       const regionData = await regionResponse.json();
+        //       console.log(`Region data from ${type}/${region}:`, regionData);
+
+        //       // Normalize regionData to use lowercase keys
+        //       this.normalizeDataKeys(regionData);
+
+        //       // Merge the data: start with base (all.json) and overlay region-specific values
+        //       const mergedData = this.mergePlaceholderData(baseData, regionData);
+
+        //       // Create sheet name
+        //       const regionName = region.replace('.json', ''); // Remove .json extension
+        //       const sheetName = regionName === 'global' ? type : (
+        //         type === 'default' ? regionName :`${type}-${regionName}`
+        //       );
+
+        //       // Add to multi-sheet result
+        //       multiSheetResult[sheetName] = {
+        //         total: mergedData.total || mergedData.data?.length || 0,
+        //         offset: 0,
+        //         limit: mergedData.total || mergedData.data?.length || 0,
+        //         data: mergedData.data || []
+        //       };
+
+        //       // Add sheet name to names array
+        //       multiSheetResult[':names'].push(sheetName);
+
+        //       console.log(`Added sheet "${sheetName}" with ${mergedData.data?.length || 0} items`);
+        //     } else {
+        //       console.error(`Failed to fetch ${type}/${region}: ${regionResponse.status} ${regionResponse.statusText}`);
+        //       // Use base data if region fetch fails
+        //       const regionName = region.replace('.json', '');
+        //       const sheetName = type === 'default' ? regionName : `${type}-${regionName}`;
+
+        //       multiSheetResult[sheetName] = {
+        //         total: baseData.total || baseData.data?.length || 0,
+        //         offset: 0,
+        //         limit: baseData.total || baseData.data?.length || 0,
+        //         data: baseData.data || []
+        //       };
+
+        //       multiSheetResult[':names'].push(sheetName);
+        //     }
+        //   } catch (err) {
+        //     console.error(`Error fetching ${type}/${region}:`, err);
+        //     // Use base data if region fetch fails
+        //     const regionName = region.replace('.json', '');
+        //     const sheetName = type === 'default' ? regionName : `${type}-${regionName}`;
+
+        //     multiSheetResult[sheetName] = {
+        //       total: baseData.total || baseData.data?.length || 0,
+        //       offset: 0,
+        //       limit: baseData.total || baseData.data?.length || 0,
+        //       data: baseData.data || []
+        //     };
+
+        //     multiSheetResult[':names'].push(sheetName);
+        //   }
+        // }
+      }
+
+      console.log('\n=== BEFORE POST-PROCESSING ===');
+      console.log('Multi-sheet placeholder data:', JSON.stringify(multiSheetResult, null, 2));
+
+      // Apply post-processing to merge sheets according to the specified rules
+      const postProcessedResult = this.postProcessMultiSheet(multiSheetResult);
+
+      console.log('\n=== AFTER POST-PROCESSING ===');
+      console.log('Post-processed multi-sheet data:', JSON.stringify(postProcessedResult, null, 2));
+
+      // POST the data to the endpoint
+      await this.postPlaceholderData(postProcessedResult);
+
+    } catch (err) {
+      console.error('Error in copy:', err);
+      this.statusMessage = `Error: ${err.message}`;
+      this.statusType = 'error';
+    }
+  }
+
   render() {
     if (this.loading) {
       return html`
