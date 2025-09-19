@@ -567,13 +567,6 @@ class PM2 extends LitElement {
           >
             View Generated Placeholders
           </button>
-
-          <button
-            @click=${this.handleViewMultisheet}
-            class="view-multisheet-button"
-          >
-            View Multisheet
-          </button>
         </div>
 
         <div class="button-group">
