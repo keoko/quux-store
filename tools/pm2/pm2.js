@@ -214,7 +214,7 @@ class PM2 extends LitElement {
         console.log(`\n=== Processing type: ${type} ===`);
 
         // fetch from this.placeholderData ${type}-all.json
-        const allData = this.placeholderData[`${type}-all`];
+        const allData = this.placeholderData[`${type}-all`] || {};
 
         // get regions from this.placeholderData with keys like ${type}-region,
         // extract the region name and filter out the all region and type-all region
