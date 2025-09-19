@@ -213,10 +213,6 @@ class PM2 extends LitElement {
       for (const type of types) {
         console.log(`\n=== Processing type: ${type} ===`);
 
-        // // First, fetch the all.json file for this type
-        // const allPath = `${this.basePath}/.placeholders/${type}/all.json`;
-        // const allSourceUrl = this.addCacheBust(`https://admin.da.live/source${allPath}`);
-
         // fetch from this.placeholderData ${type}-all.json
         const allData = this.placeholderData[`${type}-all`];
 
@@ -235,7 +231,7 @@ class PM2 extends LitElement {
           console.log(`Region data for ${type}-${region}:`, regionData);
 
           // Normalize regionData to use lowercase keys
-          // this.normalizeDataKeys(regionData);
+          this.normalizeDataKeys(regionData);
 
           // merge the region data with the all data
           const mergedData = this.mergePlaceholderData(allData, regionData);
@@ -257,92 +253,19 @@ class PM2 extends LitElement {
           // Add sheet name to names array
           multiSheetResult[':names'].push(sheetName);
         }
-
-
-
-        //   const regionPath = `${this.basePath}/.placeholders/${type}/${region}`;
-        //   const regionSourceUrl = this.addCacheBust(`https://admin.da.live/source${regionPath}`);
-
-        //   try {
-        //     const regionResponse = await fetch(regionSourceUrl, {
-        //       headers: {
-        //         'Authorization': `Bearer ${token}`
-        //       }
-        //     });
-
-        //     if (regionResponse.ok) {
-        //       const regionData = await regionResponse.json();
-        //       console.log(`Region data from ${type}/${region}:`, regionData);
-
-        //       // Normalize regionData to use lowercase keys
-        //       this.normalizeDataKeys(regionData);
-
-        //       // Merge the data: start with base (all.json) and overlay region-specific values
-        //       const mergedData = this.mergePlaceholderData(baseData, regionData);
-
-        //       // Create sheet name
-        //       const regionName = region.replace('.json', ''); // Remove .json extension
-        //       const sheetName = regionName === 'global' ? type : (
-        //         type === 'default' ? regionName :`${type}-${regionName}`
-        //       );
-
-        //       // Add to multi-sheet result
-        //       multiSheetResult[sheetName] = {
-        //         total: mergedData.total || mergedData.data?.length || 0,
-        //         offset: 0,
-        //         limit: mergedData.total || mergedData.data?.length || 0,
-        //         data: mergedData.data || []
-        //       };
-
-        //       // Add sheet name to names array
-        //       multiSheetResult[':names'].push(sheetName);
-
-        //       console.log(`Added sheet "${sheetName}" with ${mergedData.data?.length || 0} items`);
-        //     } else {
-        //       console.error(`Failed to fetch ${type}/${region}: ${regionResponse.status} ${regionResponse.statusText}`);
-        //       // Use base data if region fetch fails
-        //       const regionName = region.replace('.json', '');
-        //       const sheetName = type === 'default' ? regionName : `${type}-${regionName}`;
-
-        //       multiSheetResult[sheetName] = {
-        //         total: baseData.total || baseData.data?.length || 0,
-        //         offset: 0,
-        //         limit: baseData.total || baseData.data?.length || 0,
-        //         data: baseData.data || []
-        //       };
-
-        //       multiSheetResult[':names'].push(sheetName);
-        //     }
-        //   } catch (err) {
-        //     console.error(`Error fetching ${type}/${region}:`, err);
-        //     // Use base data if region fetch fails
-        //     const regionName = region.replace('.json', '');
-        //     const sheetName = type === 'default' ? regionName : `${type}-${regionName}`;
-
-        //     multiSheetResult[sheetName] = {
-        //       total: baseData.total || baseData.data?.length || 0,
-        //       offset: 0,
-        //       limit: baseData.total || baseData.data?.length || 0,
-        //       data: baseData.data || []
-        //     };
-
-        //     multiSheetResult[':names'].push(sheetName);
-        //   }
-        // }
       }
 
       console.log('\n=== BEFORE POST-PROCESSING ===');
       console.log('Multi-sheet placeholder data:', JSON.stringify(multiSheetResult, null, 2));
 
-      // // Apply post-processing to merge sheets according to the specified rules
-      // const postProcessedResult = this.postProcessMultiSheet(multiSheetResult);
+      // Apply post-processing to merge sheets according to the specified rules
+      const postProcessedResult = this.postProcessMultiSheet(multiSheetResult);
 
-      // console.log('\n=== AFTER POST-PROCESSING ===');
-      // console.log('Post-processed multi-sheet data:', JSON.stringify(postProcessedResult, null, 2));
+      console.log('\n=== AFTER POST-PROCESSING ===');
+      console.log('Post-processed multi-sheet data:', JSON.stringify(postProcessedResult, null, 2));
 
-      // // POST the data to the endpoint
-      // await this.postPlaceholderData(postProcessedResult);
-
+      // POST the data to the endpoint
+      await this.postPlaceholderData(postProcessedResult);
     } catch (err) {
       console.error('Error in copy:', err);
       this.statusMessage = `Error: ${err.message}`;
@@ -407,6 +330,106 @@ class PM2 extends LitElement {
     merged.total = merged.data ? merged.data.length : 0;
 
     return merged;
+  }
+
+  postProcessMultiSheet(multiSheetData) {
+    console.log('\n=== POST-PROCESSING MULTI-SHEET ===');
+
+    // Create a deep copy to avoid modifying the original
+    const result = JSON.parse(JSON.stringify(multiSheetData));
+
+    // Special case: Merge "banner" with "default" (banner overwrites duplicate keys)
+    if (result.banner && result.default) {
+      console.log('Merging banner with default (banner overwrites)...');
+      const mergedDefault = this.mergePlaceholderData(result.default, result.banner);
+      result.default = mergedDefault;
+
+      // Remove the banner sheet since it's now merged into default
+      delete result.banner;
+      result[':names'] = result[':names'].filter(name => name !== 'banner');
+
+      console.log(`Merged banner into default. Default now has ${mergedDefault.data?.length || 0} items.`);
+    }
+
+    // Normal case: Merge each region with its corresponding "banner-region"
+    // Find all banner-* sheets and their corresponding region sheets
+    const bannerSheets = result[':names'].filter(name => name.startsWith('banner-'));
+
+    bannerSheets.forEach(bannerSheetName => {
+      // Extract region name from banner sheet (e.g., "banner-uae" -> "uae")
+      const regionName = bannerSheetName.replace('banner-', '');
+
+      // Check if corresponding region sheet exists
+      if (result[regionName]) {
+        console.log(`Merging ${bannerSheetName} with ${regionName} (banner overwrites)...`);
+        const mergedRegion = this.mergePlaceholderData(result[regionName], result[bannerSheetName]);
+        result[regionName] = mergedRegion;
+
+        // Remove the banner sheet since it's now merged
+        delete result[bannerSheetName];
+        result[':names'] = result[':names'].filter(name => name !== bannerSheetName);
+
+        console.log(`Merged ${bannerSheetName} into ${regionName}. ${regionName} now has ${mergedRegion.data?.length || 0} items.`);
+      } else {
+        console.log(`Warning: Found ${bannerSheetName} but no corresponding ${regionName} sheet to merge with.`);
+      }
+    });
+
+    console.log('Post-processing complete. Final sheet names:', result[':names']);
+    return result;
+  }
+
+  async postPlaceholderData(multiSheetData) {
+    try {
+      console.log('\n=== POSTING TO ENDPOINT ===');
+      this.statusMessage = 'Copying placeholder data...';
+      this.statusType = 'info';
+
+      const url = this.addCacheBust(`https://admin.da.live/source${this.basePath}/placeholders.json`);
+
+      // Create FormData with the multi-sheet data
+      const body = new FormData();
+      body.append('data', new Blob([JSON.stringify(multiSheetData)], { type: 'application/json' }));
+
+      // POST the data
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: body
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Successfully posted placeholder data:', result);
+        this.statusMessage = 'Placeholder data successfully copied!';
+        this.statusType = 'success';
+      } else {
+        console.error(`Failed to post placeholder data: ${response.status} ${response.statusText}`);
+        this.statusMessage = `Failed to copy placeholder data: ${response.status} ${response.statusText}`;
+        this.statusType = 'error';
+      }
+    } catch (err) {
+      console.error('Error posting placeholder data:', err);
+      this.statusMessage = `Error copying placeholder data: ${err.message}`;
+      this.statusType = 'error';
+    }
+  }
+
+  normalizeDataKeys(data) {
+    // Normalize data array to use lowercase keys
+    if (data && data.data && Array.isArray(data.data)) {
+      data.data = data.data.map(item => {
+        const normalizedItem = {};
+        Object.keys(item).forEach(key => {
+          const lowerKey = key.toLowerCase();
+          normalizedItem[lowerKey] = item[key];
+        });
+        return normalizedItem;
+      });
+    }
+    return data;
   }
 
   render() {
