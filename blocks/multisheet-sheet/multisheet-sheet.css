@@ -74,6 +74,12 @@
   border-bottom: 1px solid var(--border-color, #e9ecef);
 }
 
+.sheet-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .sheet-header h3 {
   margin: 0;
   font-size: 1.25rem;
@@ -87,6 +93,28 @@
   background-color: var(--bg-muted-color, #f8f9fa);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
+}
+
+.save-button {
+  background-color: var(--link-color, #007bff);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: var(--link-hover-color, #0056b3);
+}
+
+.save-button:disabled {
+  background-color: var(--text-muted-color, #6c757d);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .table-container {
@@ -121,6 +149,28 @@
   vertical-align: top;
   word-break: break-word;
   max-width: 200px;
+}
+
+.editable-cell {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.editable-cell:hover {
+  background-color: var(--table-hover-bg, #f8f9fa);
+}
+
+.editable-cell.editing {
+  background-color: var(--editing-bg-color, #fff3cd);
+  border: 2px solid var(--link-color, #007bff);
+  outline: none;
+  cursor: text;
+}
+
+.editable-cell.editing:focus {
+  background-color: var(--editing-focus-bg-color, #ffffff);
+  box-shadow: 0 0 0 3px var(--link-color, #007bff);
 }
 
 .data-table tr:hover {

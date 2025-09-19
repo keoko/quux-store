@@ -13,6 +13,8 @@ class MultisheetSheet extends LitElement {
     activeSheet: { type: String, state: true },
     loading: { type: Boolean, state: true },
     error: { type: String, state: true },
+    editingCell: { type: Object, state: true },
+    editedData: { type: Object, state: true },
   };
 
   constructor() {
@@ -21,6 +23,8 @@ class MultisheetSheet extends LitElement {
     this.activeSheet = null;
     this.loading = true;
     this.error = null;
+    this.editingCell = null;
+    this.editedData = {};
   }
 
   async connectedCallback() {
@@ -64,6 +68,60 @@ class MultisheetSheet extends LitElement {
 
   switchSheet(sheetName) {
     this.activeSheet = sheetName;
+    this.editingCell = null; // Clear editing state when switching sheets
+  }
+
+  startEditingCell(rowIndex, header, value) {
+    this.editingCell = { rowIndex, header, value };
+  }
+
+  stopEditingCell() {
+    this.editingCell = null;
+  }
+
+  updateCellValue(event) {
+    const { rowIndex, header } = this.editingCell;
+    const newValue = event.target.textContent;
+
+    // Update the edited data
+    if (!this.editedData[this.activeSheet]) {
+      this.editedData[this.activeSheet] = {};
+    }
+    if (!this.editedData[this.activeSheet][rowIndex]) {
+      this.editedData[this.activeSheet][rowIndex] = {};
+    }
+    this.editedData[this.activeSheet][rowIndex][header] = newValue;
+
+    this.stopEditingCell();
+  }
+
+  getCellValue(rowIndex, header) {
+    // Check if this cell has been edited
+    if (this.editedData[this.activeSheet] &&
+        this.editedData[this.activeSheet][rowIndex] &&
+        this.editedData[this.activeSheet][rowIndex][header] !== undefined) {
+      return this.editedData[this.activeSheet][rowIndex][header];
+    }
+
+    // Return original data
+    const sheetData = this.data[this.activeSheet];
+    if (sheetData && sheetData.data && sheetData.data[rowIndex]) {
+      return sheetData.data[rowIndex][header] || '';
+    }
+    return '';
+  }
+
+  isCellEditing(rowIndex, header) {
+    return this.editingCell &&
+           this.editingCell.rowIndex === rowIndex &&
+           this.editingCell.header === header;
+  }
+
+  saveChanges() {
+    // This would typically send the edited data back to the server
+    console.log('Saving changes:', this.editedData);
+    // TODO: Implement actual save functionality
+    this.editedData = {}; // Clear edited data after saving
   }
 
   renderSheet(sheetName) {
@@ -84,7 +142,16 @@ class MultisheetSheet extends LitElement {
       <div class="sheet-content">
         <div class="sheet-header">
           <h3>${sheetName}</h3>
-          <span class="row-count">${rows.length} rows</span>
+          <div class="sheet-actions">
+            <span class="row-count">${rows.length} rows</span>
+            <button
+              class="save-button"
+              @click=${this.saveChanges}
+              ?disabled=${Object.keys(this.editedData).length === 0}
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
         <div class="table-container">
           <table class="data-table">
@@ -97,7 +164,23 @@ class MultisheetSheet extends LitElement {
               ${rows.map((row, index) => html`
                 <tr>
                   ${headers.map(header => html`
-                    <td>${row[header] || ''}</td>
+                    <td
+                      class="editable-cell ${this.isCellEditing(index, header) ? 'editing' : ''}"
+                      @click=${() => this.startEditingCell(index, header, this.getCellValue(index, header))}
+                      @blur=${this.updateCellValue}
+                      @keydown=${(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          this.updateCellValue(e);
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          this.stopEditingCell();
+                        }
+                      }}
+                      contenteditable=${this.isCellEditing(index, header)}
+                    >
+                      ${this.getCellValue(index, header)}
+                    </td>
                   `)}
                 </tr>
               `)}
