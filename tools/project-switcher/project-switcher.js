@@ -4,6 +4,7 @@ import 'https://da.live/nx/public/sl/components.js';
 import getStyle from 'https://da.live/nx/utils/styles.js';
 // eslint-disable-next-line import/no-unresolved
 import { LitElement, html, nothing } from 'da-lit';
+const { token } = await DA_SDK;
 
 const style = await getStyle(import.meta.url);
 
@@ -27,7 +28,13 @@ class ProjectSwitcher extends LitElement {
     super.connectedCallback();
     this.shadowRoot.adoptedStyleSheets = [style];
     const url = 'https://admin.da.live/list/alshaya-axp/';
-    const response = await fetch(url);
+    const response = await fetch(url,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
     const data = await response.json();
 
     // Loop through each item in the data array
