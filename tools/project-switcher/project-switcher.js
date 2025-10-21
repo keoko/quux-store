@@ -4,6 +4,7 @@ import 'https://da.live/nx/public/sl/components.js';
 import getStyle from 'https://da.live/nx/utils/styles.js';
 // eslint-disable-next-line import/no-unresolved
 import { LitElement, html, nothing } from 'da-lit';
+import DA_SDK from 'https://da.live/nx/utils/sdk.js';
 const { token } = await DA_SDK;
 
 const style = await getStyle(import.meta.url);
